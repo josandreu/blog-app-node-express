@@ -7,7 +7,7 @@ blogRouter.get('/', (request, response) => {
   });
 });
 
-blogRouter.post('/', (request, response) => {
+blogRouter.post('/api/blogs', (request, response) => {
   const body = request.body;
 
   const blog = new Blog({
