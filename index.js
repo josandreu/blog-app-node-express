@@ -4,5 +4,5 @@ const logger = require('./utils/logger').default;
 
 const PORT = config.PORT || 3003;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
