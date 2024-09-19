@@ -14,10 +14,10 @@ logger.info('connecting to', mongoURL);
 mongoose
   .connect(mongoURL)
   .then((result) => {
-    console.log('connected to MongoDB');
+    logger.info('connected to MongoDB');
   })
   .catch((error) => {
-    console.log('error connecting to MongoDB:', error.message);
+    logger.info('error connecting to MongoDB:', error.message);
   });
 
 app.use(cors());
