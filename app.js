@@ -4,7 +4,7 @@ const app = express();
 const cors = require('cors');
 const blogRouter = require('./controllers/blogs');
 const middleware = require('./utils/middleware');
-const logger = require('./utils/logger').default;
+const logger = require('./utils/logger');
 const mongoose = require('mongoose');
 
 const mongoURL = `mongodb+srv://${config.DB_USER}:${config.DB_PASS}@${config.DB_URL}`;
