@@ -91,6 +91,42 @@ describe('POST /api/blogs', () => {
   });
 });
 
+describe('DELETE /api/blogs', () => {
+  test('a blog can be deleted', async () => {
+    const initialBlogs = await helper.blogsInDb();
+    const blogToDelete = initialBlogs[0];
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+
+    const blogsAtEnd = await helper.blogsInDb();
+
+    assert.strictEqual(blogsAtEnd.length, initialBlogs.length - 1);
+
+    const titles = blogsAtEnd.map((b) => b.title);
+    assert(!titles.includes(blogToDelete.title));
+  });
+});
+
+describe('PUT /api/blogs', () => {
+  test('a blog can be update', async () => {
+    const update = {
+      title: 'Note updated',
+      likes: 33,
+    };
+
+    const blogsInDb = await helper.blogsInDb();
+    const blogToUpdate = blogsInDb[0];
+
+    const result = await api.put(`/api/blogs/${blogToUpdate.id}`).send(update);
+    const blogUpdated = result.body;
+
+    console.log('blogUpdated', blogUpdated);
+
+    assert(blogUpdated.title.includes(update.title));
+    assert.strictEqual(blogUpdated.likes, update.likes);
+  });
+});
+
 after(async () => {
   await mongoose.connection.close();
 }, 20000);
