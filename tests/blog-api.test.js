@@ -1,19 +1,19 @@
 const { test, after, beforeEach, describe } = require('node:test');
 const assert = require('node:assert');
 const mongoose = require('mongoose');
+const helper = require('./test-helper');
+const bcrypt = require('bcrypt');
 const supertest = require('supertest');
 const app = require('../app');
-const helper = require('./test-helper');
-const Blog = require('../models/blog');
-
-const initialBlogs = helper.initialBlogs;
-
 const api = supertest(app);
+
+const Blog = require('../models/blog');
+const User = require('../models/user');
+const initialBlogs = helper.initialBlogs;
 
 beforeEach(async () => {
   await Blog.deleteMany({});
-
-  console.log('cleared');
+  await User.deleteMany({});
 
   //   for (const blog of initialBlogs) {
   //     const blogObject = new Blog(blog);
@@ -23,11 +23,16 @@ beforeEach(async () => {
 
   await Blog.insertMany(initialBlogs);
 
-  console.log('done');
+  const passwordHash = await bcrypt.hash('passexample', 10);
+  const user = new User({
+    username: 'exampleuser',
+    passwordHash,
+  });
+  await user.save();
 });
 
 describe('GET /api/blogs', () => {
-  test('there are two notes', async () => {
+  test('there are two blogs', async () => {
     const response = await api
       .get('/api/blogs')
       .expect(200)
@@ -58,7 +63,22 @@ describe('POST /api/blogs', () => {
       likes: 10,
     };
 
-    await api.post('/api/blogs').send(newBlog).expect(201);
+    const user = {
+      username: 'exampleuser',
+      password: 'passexample',
+    };
+
+    const response = await api.post('/api/login').send(user).expect(200);
+    token = response.body.token;
+
+    await api
+      .post('/api/blogs')
+      .set({
+        Authorization: `Bearer ${token}`,
+      })
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
 
     const blogsAtEnd = await helper.blogsInDb();
     const titles = blogsAtEnd.map((r) => r.title);
@@ -74,9 +94,24 @@ describe('POST /api/blogs', () => {
       url: 'https://reactpatterns.com/',
     };
 
-    const response = await api.post('/api/blogs').send(newBlog).expect(201);
+    const user = {
+      username: 'exampleuser',
+      password: 'passexample',
+    };
 
-    assert.strictEqual(response.body.likes, 0);
+    const response = await api.post('/api/login').send(user).expect(200);
+    token = response.body.token;
+
+    const responseBlog = await api
+      .post('/api/blogs')
+      .set({
+        Authorization: `Bearer ${token}`,
+      })
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+
+    assert.strictEqual(responseBlog.body.likes, 0);
   });
 
   test('if the title or url properties are missing from the request data, the backend responds with the status code 400 Bad Request', async () => {
@@ -94,13 +129,42 @@ describe('POST /api/blogs', () => {
 describe('DELETE /api/blogs', () => {
   test('a blog can be deleted', async () => {
     const initialBlogs = await helper.blogsInDb();
-    const blogToDelete = initialBlogs[0];
+    const newBlog = {
+      title: 'First class tests',
+      author: 'Robert C. Martin',
+      url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
+      likes: 10,
+    };
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+    const user = {
+      username: 'exampleuser',
+      password: 'passexample',
+    };
+
+    const response = await api.post('/api/login').send(user).expect(200);
+    token = response.body.token;
+
+    await api
+      .post('/api/blogs')
+      .set({
+        Authorization: `Bearer ${token}`,
+      })
+      .send(newBlog)
+      .expect(201);
+
+    const blogsAtStart = await helper.blogsInDb();
+    const blogToDelete = blogsAtStart[blogsAtStart.length - 1];
+
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set({
+        Authorization: `Bearer ${token}`,
+      })
+      .expect(204);
 
     const blogsAtEnd = await helper.blogsInDb();
 
-    assert.strictEqual(blogsAtEnd.length, initialBlogs.length - 1);
+    assert.strictEqual(blogsAtEnd.length, initialBlogs.length);
 
     const titles = blogsAtEnd.map((b) => b.title);
     assert(!titles.includes(blogToDelete.title));

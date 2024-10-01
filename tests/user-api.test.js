@@ -4,11 +4,10 @@ const mongoose = require('mongoose');
 const supertest = require('supertest');
 const app = require('../app');
 const helper = require('./test-helper');
-const User = require('../models/user');
-
-const initialUsers = helper.initialUsers;
-
 const api = supertest(app);
+
+const User = require('../models/user');
+const initialUsers = helper.initialUsers;
 
 beforeEach(async () => {
   await User.deleteMany({});
@@ -37,7 +36,7 @@ describe('POST /api/users', () => {
       password: 'no',
     };
 
-    await api
+    const result = await api
       .post('/api/users')
       .send(notValidUser)
       .expect(401)
