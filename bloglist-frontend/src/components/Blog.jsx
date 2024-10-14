@@ -54,13 +54,19 @@ const Blog = ({ blog, updateBlog, removeBlog, user }) => {
 
   return (
     <div style={blogStyle}>
-      {blog.title} {blog.author}{' '}
-      <button onClick={toggleVisibility}>{buttonText}</button>
-      <div style={showWhenVisible}>
+      <span className='blog-header-info'>
+        {blog.title} {blog.author}{' '}
+      </span>
+      <button className='button-show' onClick={toggleVisibility}>
+        {buttonText}
+      </button>
+      <div className='blog-content' style={showWhenVisible}>
         <p>{blog.url}</p>
         <div style={likeStyle}>
           <p>{blog.likes}</p>
-          <button onClick={handleLike}>Like</button>
+          <button className='button-like' onClick={handleLike}>
+            Like
+          </button>
         </div>
         {blog.user && <p>{blog.user.name}</p>}
         <button onClick={handleRemove}>Remove</button>
